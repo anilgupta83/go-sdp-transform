@@ -1,4 +1,4 @@
-package sdptransform
+package transform
 
 import (
 	"bytes"
@@ -69,6 +69,7 @@ func Parse(sdp string) (sdpStruct *SdpStruct, err error) {
 	return
 }
 
+// ParseParams Parses fmtp.config and others such as rid.params and returns an object with all the params in a key/value fashion
 func ParseParams(str string) map[string]string {
 
 	ret := map[string]string{}
@@ -146,34 +147,39 @@ func ParseImageAttributes(str string) []map[string]int {
 
 }
 
-func ParseSimulcastStreamList(str string) [][]map[string]interface{} {
+type SimulCastItem struct {
+	Scid   string
+	Paused bool
+}
 
-	ret := [][]map[string]interface{}{}
+// ParseSimulcastStreamList Parses simulcast streams/formats. Must be provided with the attrs1 or attrs2 string of the a=simulcast line.
+func ParseSimulcastStreamList(str string) [][]*SimulCastItem {
+
+	ret := [][]*SimulCastItem{}
 
 	streams := bytes.Split([]byte(str), []byte{';'})
 
 	for _, stream := range streams {
 
-		streamFormat := []map[string]interface{}{}
+		streamFormat := []*SimulCastItem{}
 
 		formats := bytes.Split(stream, []byte{','})
 
 		for _, format := range formats {
-			var scid interface{}
+			var scid string
 			paused := false
 
 			if format[0] != '~' {
-				scid = toType(string(format), 'd')
+				scid = string(format)
 			} else {
-				scid = toType(string(format[1:len(format)-1]), 'd')
+				scid = string(format[1:])
 				paused = true
 			}
 
-			streamFormat = append(streamFormat, map[string]interface{}{
-				"scid":   scid,
-				"paused": paused,
+			streamFormat = append(streamFormat, &SimulCastItem{
+				Scid:   scid,
+				Paused: paused,
 			})
-
 		}
 		ret = append(ret, streamFormat)
 	}
@@ -215,6 +221,7 @@ func parseReg(rule *Rule, location *gabs.Container, content []byte) {
 	if len(rule.Push) != 0 {
 		location.ArrayAppend(keyLocation.Data(), rule.Push)
 	}
+
 }
 
 func attachProperties(match [][]byte, location *gabs.Container, names []string, rawName string, types []rune) {

@@ -1,4 +1,4 @@
-package sdptransform
+package transform
 
 import (
 	"regexp"
@@ -37,8 +37,8 @@ func hasValue(obj *gabs.Container, key string) bool {
 }
 
 var rulesMap map[byte][]*Rule = map[byte][]*Rule{
-	'v': []*Rule{
-		&Rule{
+	'v': {
+		{
 			Name:   "version",
 			Push:   "",
 			Reg:    regexp.MustCompile("^(\\d*)$"),
@@ -47,18 +47,18 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%d",
 		},
 	},
-	'o': []*Rule{
-		&Rule{
+	'o': {
+		{
 			Name:   "origin",
 			Push:   "",
-			Reg:    regexp.MustCompile("^(\\S*) (\\S*) (\\d*) (\\S*) IP(\\d*) (\\S*)"),
+			Reg:    regexp.MustCompile("^(\\S*) (\\S*) (\\d*) (\\S*) IP(\\d) (\\S*)"),
 			Names:  []string{"username", "sessionId", "sessionVersion", "netType", "ipVer", "address"},
 			Types:  []rune{'s', 's', 'd', 's', 'd', 's'},
 			Format: "%s %s %d %s IP%d %s",
 		},
 	},
-	's': []*Rule{
-		&Rule{
+	's': {
+		{
 			Name:   "name",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -67,8 +67,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	'i': []*Rule{
-		&Rule{
+	'i': {
+		{
 			Name:   "description",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -77,8 +77,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	'u': []*Rule{
-		&Rule{
+	'u': {
+		{
 			Name:   "uri",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -87,8 +87,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	'e': []*Rule{
-		&Rule{
+	'e': {
+		{
 			Name:   "email",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -97,8 +97,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	'p': []*Rule{
-		&Rule{
+	'p': {
+		{
 			Name:   "phone",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -107,8 +107,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	'z': []*Rule{
-		&Rule{
+	'z': {
+		{
 			Name:   "timezones",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -117,8 +117,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	'r': []*Rule{
-		&Rule{
+	'r': {
+		{
 			Name:   "repeats",
 			Push:   "",
 			Reg:    regexp.MustCompile("(.*)"),
@@ -127,8 +127,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s",
 		},
 	},
-	't': []*Rule{
-		&Rule{
+	't': {
+		{
 			Name:   "timing",
 			Push:   "",
 			Reg:    regexp.MustCompile("^(\\d*) (\\d*)"),
@@ -137,8 +137,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%d %d",
 		},
 	},
-	'c': []*Rule{
-		&Rule{
+	'c': {
+		{
 			Name:   "connection",
 			Push:   "",
 			Reg:    regexp.MustCompile("^IN IP(\\d) (\\S*)"),
@@ -147,8 +147,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "IN IP%d %s",
 		},
 	},
-	'b': []*Rule{
-		&Rule{
+	'b': {
+		{
 			Name:   "",
 			Push:   "bandwidth",
 			Reg:    regexp.MustCompile("^(TIAS|AS|CT|RR|RS):(\\d*)"),
@@ -157,8 +157,8 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s:%d",
 		},
 	},
-	'm': []*Rule{ // m=video 51744 RTP/AVP 126 97 98 34 31
-		&Rule{
+	'm': { // m=video 51744 RTP/AVP 126 97 98 34 31
+		{
 			Name:   "",
 			Push:   "",
 			Reg:    regexp.MustCompile("^(\\w*) (\\d*) ([\\w\\/]*)(?: (.*))?"),
@@ -167,7 +167,7 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "%s %d %s %s",
 		},
 	},
-	'a': []*Rule{ // a=rtpmap:110 opus/48000/2
+	'a': { // a=rtpmap:110 opus/48000/2
 		&Rule{
 			Name:   "",
 			Push:   "rtp",
@@ -177,7 +177,6 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "",
 			FormatFunc: func(obj *gabs.Container) string {
 				var ret string
-
 				if hasValue(obj, "encoding") {
 					ret = "rtpmap:%d %s/%d/%d"
 				} else {
@@ -333,6 +332,15 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Names:  []string{},
 			Types:  []rune{'d'},
 			Format: "maxptime:%d",
+		},
+		// a=bundle-only
+		&Rule{
+			Name:   "bundleOnly",
+			Push:   "",
+			Reg:    regexp.MustCompile("^(bundle-only)"),
+			Names:  []string{},
+			Types:  []rune{'s'},
+			Format: "%s",
 		},
 		// a=sendrecv
 		&Rule{
@@ -521,10 +529,36 @@ var rulesMap map[byte][]*Rule = map[byte][]*Rule{
 			Format: "",
 			FormatFunc: func(obj *gabs.Container) string {
 				if hasValue(obj, "maxMessageSize") {
-					return "sctpmap:%s %s %s"
+					return "sctpmap:%d %s %d"
 				} else {
-					return "sctpmap:%s %s"
+					return "sctpmap:%d %s"
 				}
+			},
+		},
+
+		// a=sctp-port:5000
+		&Rule{
+			Name:   "sctp-port",
+			Push:   "",
+			Reg:    regexp.MustCompile("^sctp-port:(\\d+)"),
+			Names:  []string{},
+			Types:  []rune{'d'},
+			Format: "",
+			FormatFunc: func(obj *gabs.Container) string {
+				return "sctp-port:%d"
+			},
+		},
+
+		// a=max-message-size:262144
+		&Rule{
+			Name:   "sctp-max-message-size",
+			Push:   "",
+			Reg:    regexp.MustCompile("^max-message-size:(\\d+)"),
+			Names:  []string{},
+			Types:  []rune{'d'},
+			Format: "",
+			FormatFunc: func(obj *gabs.Container) string {
+				return "max-message-size:%d"
 			},
 		},
 		// a=x-google-flag:conference

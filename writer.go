@@ -1,4 +1,4 @@
-package sdptransform
+package transform
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/Jeffail/gabs"
-	"github.com/sanity-io/litter"
 )
 
 var outerOrder = []byte{'v', 'o', 's', 'i', 'u', 'e', 'p', 'c', 'b', 't', 'r', 'z', 'a'}
@@ -25,6 +24,7 @@ func Write(sdpStruct *SdpStruct) (string, error) {
 		return "", err
 	}
 	session, err := gabs.ParseJSON(sdpBuffer)
+
 	if err != nil {
 		return "", err
 	}
@@ -34,14 +34,12 @@ func Write(sdpStruct *SdpStruct) (string, error) {
 	}
 
 	if !session.Exists("name") {
-		session.Set("-", "name")
+		session.Set(" ", "name")
 	}
 
 	if !session.Exists("media") {
 		session.Set([]interface{}{}, "media")
 	}
-
-	litter.Dump(session.S("groups").Data())
 
 	sdp := []string{}
 
@@ -55,15 +53,14 @@ func Write(sdpStruct *SdpStruct) (string, error) {
 	}
 
 	for _, outType := range outerOrder {
-
 		for _, rule := range rulesMap[outType] {
 			if len(rule.Name) != 0 && session.Exists(rule.Name) && session.Path(rule.Name) != nil {
 				lineStr := makeLine(outType, rule, session)
 				sdp = append(sdp, lineStr)
 			} else if len(rule.Push) > 0 && session.Exists(rule.Push) {
 				count, err := session.ArrayCount(rule.Push)
-				fmt.Println(rule.Push)
 				if err != nil {
+					fmt.Println("error ", err)
 					continue
 				}
 
@@ -72,6 +69,7 @@ func Write(sdpStruct *SdpStruct) (string, error) {
 					lineStr := makeLine(outType, rule, el)
 					sdp = append(sdp, lineStr)
 				}
+
 			}
 		}
 	}
@@ -129,6 +127,7 @@ func makeLine(otype byte, rule *Rule, location *gabs.Container) string {
 
 	if len(rule.Names) > 0 {
 		for _, name := range rule.Names {
+
 			if len(rule.Name) > 0 && location.Exists(rule.Name) && location.Exists(rule.Name, name) {
 				args = append(args, location.Search(rule.Name, name).Data())
 			} else if location.Exists(name) {
@@ -162,9 +161,8 @@ func makeLine(otype byte, rule *Rule, location *gabs.Container) string {
 		} else if x == "%d" {
 			argInt, ok := arg.(float64)
 			if !ok {
-				fmt.Println("interface cast to int error, realtype is ", reflect.TypeOf(arg).String(), reflect.ValueOf(arg))
-				fmt.Println(rule)
-				litter.Dump(args)
+				fmt.Println(format)
+				fmt.Println("interface cast to int error, realtype is ", reflect.TypeOf(arg).String(), "value is", arg)
 			}
 			argStr := strconv.Itoa(int(argInt))
 			return argStr
